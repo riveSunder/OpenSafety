@@ -8,11 +8,11 @@ register(\
 
 register(\
         id="Popper-v0",\
-        entry_point="openi.envs:Popper",\
+        entry_point="openi.envs:PopperEnv",\
         )
 
 register(\
         id="Tripod-v0",\
-        entry_point="openi.envs:Tripod",\
+        entry_point="openi.envs:TripodEnv",\
         )
 """
