@@ -39,42 +39,104 @@ class PuckEnv(gym.Env):
         # add search paths from pybullet for e.g. plane.urdf
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
+
+    def set_goal(self):
+
+        print("setting goals")
+        self.goal_loc = np.random.randn(2) * .75
+        self.hazard_loc = np.random.randn(2) * .75
+        
+        # create goal
+        length = 0.25
+        radius = 0.125
+        self.goal_radius = radius
+        shift = [self.goal_loc[0], self.goal_loc[1],  length/4]
+        orientation = p.getQuaternionFromEuler([0,0,0])
+
+        self.goal_visual_id = p.createVisualShape(shapeType=p.GEOM_CYLINDER,
+                                    radius=radius,
+                                    length=length,
+                                    rgbaColor=[0.1, 0.1, 1.0, 0.5],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFramePosition=shift, 
+                                    visualFrameOrientation=orientation)
+        self.goal_collision_id = p.createCollisionShape(shapeType=p.GEOM_CYLINDER,
+                                radius=radius/2,
+                                height=length,
+                                collisionFramePosition=shift,
+                                collisionFrameOrientation=orientation)
+
+        self.goal_id = p.createMultiBody(baseMass=100,
+                          baseInertialFramePosition=shift,
+                          baseVisualShapeIndex=self.goal_visual_id,
+                          baseCollisionShapeIndex=self.goal_collision_id,
+                          basePosition=shift)  
+
+        # create hazard
+        shift = [self.hazard_loc[0], self.hazard_loc[1], length/4]
+        orientation = p.getQuaternionFromEuler([0,0,0])
+
+        self.hazard_visual_id = p.createVisualShape(shapeType=p.GEOM_CYLINDER,
+                                    radius=radius,
+                                    length=length,
+                                    rgbaColor=[0.9, 0.9, 0.1, 0.5],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFramePosition=shift, 
+                                    visualFrameOrientation=orientation)
+        self.hazard_collision_id = p.createCollisionShape(shapeType=p.GEOM_CYLINDER,
+                                radius=radius/2,
+                                height=length,
+                                collisionFramePosition=shift,
+                                collisionFrameOrientation=orientation)
+
+        self.hazard_id = p.createMultiBody(baseMass=100,
+                          baseInertialFramePosition=shift,
+                          baseVisualShapeIndex=self.hazard_visual_id,
+                          baseCollisionShapeIndex=self.hazard_collision_id,
+                          basePosition=shift)  
+     
+
     def compute_obs(self):
         cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
-
         cube_orientation = p.getEulerFromQuaternion(cube_orientation)
         v_linear, v_angular= p.getBaseVelocity(self.bot_id, self.physicsClient)
 
-        obs = cube_position + cube_orientation + v_linear + v_angular
-        
-        return obs
+    
+        if self.objective == "Goal":
+            hazard_position, _ = p.getBasePositionAndOrientation(self.hazard_id)
+            goal_position, _ = p.getBasePositionAndOrientation(self.goal_id)
+            
+            dist_hazard = np.sqrt((cube_position[0] - hazard_position[0])**2\
+                    + (cube_position[1] - hazard_position[1])**2)
 
-    def compute_force(self, action):
+            dist_goal = np.sqrt((cube_position[0] - goal_position[0])**2\
+                    + (cube_position[1] - goal_position[1])**2)
 
-        cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
+            if dist_hazard <= self.goal_radius * np.pi/2:
+                cost = 1.0
+            else:
+                cost = 0.0
 
-        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
-        
+            if dist_goal <= self.goal_radius * np.pi/2:
+                reward = 1.0
+                self.set_goal()
+            else:
+                reward = 0.0
 
-        force = [action[0] * np.cos(cube_orientation[2]), action[1] * np.sin(cube_orientation), 0]
+        if cost:
+            print("cost", cost)
+            p.changeVisualShape(env.bot_id, -1, rgbaColor=[1.0,0,0,1])
+        elif reward:
+            print("reward", reward)
+            p.changeVisualShape(env.bot_id, -1, rgbaColor=[0,0,1.0,1])
+        else: 
+            p.changeVisualShape(env.bot_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
 
-    def step(self, action):
-        
-        #p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
-        #        angularVelocity=[0, 0, action[1]])
 
-        force = self.compute_force(action)
-        p.applyExternalForce(self.bot_id, -1, [action[0],0,0], [0,0,0.], \
-                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
-        p.applyExternalTorque(self.bot_id, -1, [0,0,action[1]], \
-                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
+        obs = hazard_position + goal_position + cube_position + cube_orientation + v_linear + v_angular
+        info = {"cost": cost}
 
-        p.stepSimulation()
-        obs = self.compute_obs()
-        reward = 0.0
-        done = False
-        info = {}
-        return obs, reward, done, info
+        return obs, reward, info
 
     def reset(self):
         p.resetSimulation()
@@ -92,7 +154,38 @@ class PuckEnv(gym.Env):
             cube_start_orientation)
 
         p.changeDynamics(self.bot_id,-1, lateralFriction=self.k_friction)
-        return 0
+
+        if self.objective == "Goal":
+            self.set_goal()
+
+        obs, reward, info = self.compute_obs()
+
+        return obs
+
+
+    def compute_force(self, action):
+
+        cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
+
+        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
+
+        force = [action[0] * np.cos(cube_orientation[2]), action[1] * np.sin(cube_orientation), 0]
+
+    def step(self, action):
+        
+        #p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
+        #        angularVelocity=[0, 0, action[1]])
+
+        force = self.compute_force(action)
+        p.applyExternalForce(self.bot_id, -1, [action[0],0,0], [0,0,0.], \
+                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
+        p.applyExternalTorque(self.bot_id, -1, [0,0,action[1]], \
+                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
+
+        p.stepSimulation()
+        obs, reward, info = self.compute_obs()
+        done = False
+        return obs, reward, done, info
 
     def render(self, mode="human", close=False):
         pass
@@ -156,6 +249,4 @@ if __name__ == "__main__":
         #action = np.array([0, 5])
         obs, reward, done, info = env.step(action)
 
-    p.createVisualShape(p.GEOM_SPHERE, radius=10, physicsClientId=env.physicsClient)
-    obs, reward, done, info = env.step(action)
         
