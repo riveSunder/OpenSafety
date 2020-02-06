@@ -26,16 +26,35 @@ class PuckEnv(gym.Env):
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
     def compute_obs(self):
-        v = p.getBaseVelocity(self.bot_id, self.physicsClient)
-        print(v)
+        cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
 
+        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
+        v = p.getBaseVelocity(self.bot_id, self.physicsClient)
+        print(cube_position, cube_orientation)
+
+        
         obs = v
         return obs
 
+    def compute_force(self, action):
+
+        cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
+
+        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
+        
+
+        force = [action[0] * np.cos(cube_orientation[2]), action[1] * np.sin(cube_orientation), 0]
+
     def step(self, action):
         
-        p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
-                angularVelocity=[0, 0, action[1]])
+        #p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
+        #        angularVelocity=[0, 0, action[1]])
+
+        force = self.compute_force(action)
+        p.applyExternalForce(self.bot_id, -1, [action[0],0,0], [0,0,0.], \
+                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
+        p.applyExternalTorque(self.bot_id, -1, [0,0,action[1]], \
+                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
 
         p.stepSimulation()
         obs = self.compute_obs()
@@ -58,6 +77,7 @@ class PuckEnv(gym.Env):
         self.bot_id = p.loadURDF(os.path.join(path, "puck.xml"),\
             cube_start_position,\
             cube_start_orientation)
+
         return 0
 
     def render(self, mode="human", close=False):
@@ -68,10 +88,16 @@ if __name__ == "__main__":
     env = PuckEnv(render=True)
 
     obs = env.reset()
+    info = p.getDynamicsInfo(env.bot_id, -1)
+    print(info)
+    p.changeDynamics(env.bot_id,-1, lateralFriction=0.01)
+    info = p.getDynamicsInfo(env.bot_id, -1)
+    print(info)
+    
     for ii in range(500):
         time.sleep(0.025)
         p.stepSimulation()
-        #action = np.random.randn(2)
-        action = np.array([0.15, 5])
+        action = np.random.randn(2)
+        #action = np.array([0, 5])
         obs, reward, done, info = env.step(action)
         
