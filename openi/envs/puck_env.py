@@ -42,6 +42,12 @@ class PuckEnv(gym.Env):
 
     def set_goal(self):
 
+        try:
+            p.removeBody(self.goal_id)
+            p.removeBody(self.hazard_id)
+        except:
+            pass
+
         print("setting goals")
         self.goal_loc = np.random.randn(2) * .75
         self.hazard_loc = np.random.randn(2) * .75
