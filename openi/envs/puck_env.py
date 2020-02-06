@@ -15,25 +15,38 @@ import pybullet_data
 class PuckEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
-    def __init__(self, render=False):
+    def __init__(self, objective="Goal", cost="Nothing", render=False):
         super(PuckEnv, self).__init__()
 
+        # physics parameters go here
+        self.k_friction = 0.01
+
+        # parameters describing the environment go here
+        self.objective = objective
+        self.cost = cost
+
+        # action and observation spaces
+        self.observation_space = spaces.Box(low=np.array([-25., -25., -25., -np.pi, -np.pi, -np.pi, -25,-25,-25, -np.pi, -np.pi, -np.pi]),\
+                high=np.array([25., 25., 25., np.pi, np.pi, np.pi, 25, 25, 25, np.pi, np.pi, np.pi]), dtype=np.float64)
+        self.action_space = spaces.Box(low=np.array([-10.0, -1.0]), high=np.array([10.0, 1.0]), dtype=np.float64)
+
+        # start physics client
         if render:
             self.physicsClient = p.connect(p.GUI)
         else:
             self.physicsClient = p.connect(p.DIRECT)
 
+        # add search paths from pybullet for e.g. plane.urdf
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
     def compute_obs(self):
         cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
 
         cube_orientation = p.getEulerFromQuaternion(cube_orientation)
-        v = p.getBaseVelocity(self.bot_id, self.physicsClient)
-        print(cube_position, cube_orientation)
+        v_linear, v_angular= p.getBaseVelocity(self.bot_id, self.physicsClient)
 
+        obs = cube_position + cube_orientation + v_linear + v_angular
         
-        obs = v
         return obs
 
     def compute_force(self, action):
@@ -78,6 +91,7 @@ class PuckEnv(gym.Env):
             cube_start_position,\
             cube_start_orientation)
 
+        p.changeDynamics(self.bot_id,-1, lateralFriction=self.k_friction)
         return 0
 
     def render(self, mode="human", close=False):
@@ -89,15 +103,59 @@ if __name__ == "__main__":
 
     obs = env.reset()
     info = p.getDynamicsInfo(env.bot_id, -1)
-    print(info)
-    p.changeDynamics(env.bot_id,-1, lateralFriction=0.01)
-    info = p.getDynamicsInfo(env.bot_id, -1)
-    print(info)
-    
-    for ii in range(500):
+
+    shift = [-0.25,-0.25,-1]
+    meshScale = [.1,.1,.1]
+    orientation = p.getQuaternionFromEuler([np.pi/2,0,0])
+
+    visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,
+                                fileName="duck.obj",
+                                radius=0.1,
+                                rgbaColor=[1, 1, 1, 1],
+                                specularColor=[0.8, .0, 0],
+                                visualFramePosition=shift,
+                                visualFrameOrientation=orientation,
+                                meshScale=meshScale)
+    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH,
+                                fileName="duck_vhacd.obj",
+                                radius=0.1,
+                                collisionFramePosition=shift,
+                                collisionFrameOrientation=orientation,
+                                meshScale=meshScale)
+
+#    visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE,
+#                                radius=0.1,
+#                                rgbaColor=[1, 1, 1, 1],
+#                                specularColor=[0.8, .0, 0],
+#                                visualFramePosition=shift,
+#                                visualFrameOrientation=orientation,
+#                                meshScale=meshScale)
+#    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_SPHERE,
+#                                radius=0.1,
+#                                collisionFramePosition=shift,
+#                                collisionFrameOrientation=orientation,
+#                                meshScale=meshScale)
+
+    rangex = 1
+    rangey = 1
+    for i in range(rangex):
+      for j in range(rangey):
+        p.createMultiBody(baseMass=1,
+                          baseInertialFramePosition=shift,
+                          baseCollisionShapeIndex=collisionShapeId,
+                          baseVisualShapeIndex=visualShapeId,
+                          basePosition=[((-rangex / 2) + i) * meshScale[0] * 2,
+                                        (-rangey / 2 + j) * meshScale[1] * 2, 1],
+                              useMaximalCoordinates=False)
+
+    time.sleep(2.)
+    for ii in range(1000):
         time.sleep(0.025)
         p.stepSimulation()
-        action = np.random.randn(2)
+        action = env.action_space.sample()
         #action = np.array([0, 5])
         obs, reward, done, info = env.step(action)
+
+    p.createVisualShape(p.GEOM_SPHERE, radius=10, physicsClientId=env.physicsClient)
+    obs, reward, done, info = env.step(action)
         
