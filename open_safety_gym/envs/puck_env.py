@@ -58,6 +58,8 @@ class PuckEnv(gym.Env):
             self.goal_loc = np.random.randn(2) * 5e-1
             self.hazard_loc = np.random.randn(2) * 5e-1
 
+        self.hazard_dist = np.sqrt(np.sum(self.hazard_loc**2))
+        self.goal_dist = np.sqrt(np.sum(self.goal_loc**2))
 
         self.goal_radius = radius
         shift = [self.goal_loc[0], self.goal_loc[1],  length/4]
@@ -131,7 +133,9 @@ class PuckEnv(gym.Env):
                 reward = 1.0
                 self.set_goal()
             else:
-                reward = 0.0
+                reward = 1e-2 * (self.goal_dist - dist_goal)  
+                self.goal_dist = dist_goal
+
 
         if cost:
             p.changeVisualShape(self.bot_id, -1, rgbaColor=[1.0,0,0,1])
@@ -187,10 +191,11 @@ class PuckEnv(gym.Env):
         #        angularVelocity=[0, 0, action[1]])
 
         #force = self.compute_force(action)
-        p.applyExternalForce(self.bot_id, -1, [80*action[0],0,0], [0,0,0.], \
-                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
-        p.applyExternalTorque(self.bot_id, -1, [0,0,10*action[1]], \
-                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
+        p.applyExternalForce(self.bot_id, -1, [80*action[0],80*action[1],0],\
+                [0,0,0.], \
+                flags=p.WORLD_FRAME, physicsClientId=self.physicsClient)
+        #p.applyExternalTorque(self.bot_id, -1, [0,0,10*action[1]], \
+        #        flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
 
         p.stepSimulation()
         obs, reward, info = self.compute_obs()
