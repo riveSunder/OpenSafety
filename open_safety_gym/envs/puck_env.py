@@ -134,6 +134,8 @@ class PuckEnv(gym.Env):
                 # goal location, so scale reward by how far away it was
                 reward = 10.0 * self.goal_dist
                 self.set_goal()
+            else: 
+                reward = 0.0
 
 
         if cost:
