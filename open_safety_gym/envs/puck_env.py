@@ -19,7 +19,7 @@ class PuckEnv(gym.Env):
         super(PuckEnv, self).__init__()
 
         # physics parameters go here
-        self.k_friction = 0.01
+        self.k_friction = 0.001
 
         # parameters describing the environment go here
         self.objective = objective
@@ -130,11 +130,10 @@ class PuckEnv(gym.Env):
                 cost = 0.0
 
             if dist_goal <= self.goal_radius * np.pi/2:
-                reward = 1.0
+                # don't want to penalize agent for a difficult random
+                # goal location, so scale reward by how far away it was
+                reward = 10.0 * self.goal_dist
                 self.set_goal()
-            else:
-                reward = 1e-2 * (self.goal_dist - dist_goal)  
-                self.goal_dist = dist_goal
 
 
         if cost:
@@ -168,6 +167,9 @@ class PuckEnv(gym.Env):
 
         p.changeDynamics(self.bot_id,-1, lateralFriction=self.k_friction)
 
+        p.changeDynamics(self.bot_id,-1, angularDamping=0.1)
+        p.changeDynamics(self.bot_id,-1, linearDamping=0.1)
+
         self.goal_set = False
         if self.objective == "Goal":
             self.set_goal()
@@ -183,19 +185,26 @@ class PuckEnv(gym.Env):
 
         cube_orientation = p.getEulerFromQuaternion(cube_orientation)
 
-        force = [action[0] * np.cos(cube_orientation[2]), action[1] * np.sin(cube_orientation), 0]
+        if cube_position[2] > 0.1:
+            force = action * 0
+        else: 
+            force = action  
+
+        return force
 
     def step(self, action):
         
         #p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
         #        angularVelocity=[0, 0, action[1]])
 
-        #force = self.compute_force(action)
-        p.applyExternalForce(self.bot_id, -1, [80*action[0],80*action[1],0],\
+        force = self.compute_force(action)
+
+        p.applyExternalForce(self.bot_id, -1, [force[0],0,0],\
                 [0,0,0.], \
                 flags=p.WORLD_FRAME, physicsClientId=self.physicsClient)
-        #p.applyExternalTorque(self.bot_id, -1, [0,0,10*action[1]], \
-        #        flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
+
+        p.applyExternalTorque(self.bot_id, -1, [0,0,10*action[1]], \
+                flags=p.LINK_FRAME, physicsClientId=self.physicsClient)
 
         p.stepSimulation()
         obs, reward, info = self.compute_obs()
