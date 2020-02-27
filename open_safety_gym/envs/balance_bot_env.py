@@ -20,6 +20,7 @@ class BalanceBotEnv(gym.Env):
 
         # physics parameters go here
         self.k_friction = 0.001
+        self.down_count = 0
 
         # parameters describing the environment go here
         self.objective = objective
@@ -120,6 +121,7 @@ class BalanceBotEnv(gym.Env):
                                     linkIndex=1)
         block_position = cube_position[2]
         
+        done = False
         if self.objective == "Goal":
             hazard_position, _ = p.getBasePositionAndOrientation(self.hazard_id)
             goal_position, _ = p.getBasePositionAndOrientation(self.goal_id)
@@ -149,6 +151,11 @@ class BalanceBotEnv(gym.Env):
         print(block_position)
         if block_position < 0.125:
             cost += 1.0
+            self.down_count +=1
+            if self.down_count > 10:
+                done = True
+        else:
+            self.down_count = 0
 
 
         if cost:
@@ -162,7 +169,7 @@ class BalanceBotEnv(gym.Env):
         obs = hazard_position + goal_position + cube_position + cube_orientation + v_linear + v_angular
         info = {"cost": cost, "reward": reward}
 
-        return obs, reward, info
+        return obs, reward, done, info
 
     def reset(self):
         p.resetSimulation()
@@ -189,7 +196,7 @@ class BalanceBotEnv(gym.Env):
         if self.objective == "Goal":
             self.set_goal()
 
-        obs, reward, info = self.compute_obs()
+        obs, reward, done, info = self.compute_obs()
 
         return obs
 
@@ -216,8 +223,7 @@ class BalanceBotEnv(gym.Env):
         self.apply_force(action)
 
         p.stepSimulation()
-        obs, reward, info = self.compute_obs()
-        done = False
+        obs, reward, done, info = self.compute_obs()
         return obs, reward, done, info
 
     def render(self, mode="human", close=False):
