@@ -120,6 +120,7 @@ class BalanceBotEnv(gym.Env):
         block_state = p.getLinkState(bodyUniqueId=self.bot_id,\
                                     linkIndex=1)
         block_position = cube_position[2]
+        survival_bonus = 1e0
         
         done = False
         if self.objective == "Goal":
@@ -148,7 +149,6 @@ class BalanceBotEnv(gym.Env):
                 self.goal_dist = dist_goal
 
 
-        print(block_position)
         if block_position < 0.125:
             cost += 1.0
             self.down_count +=1
@@ -156,6 +156,7 @@ class BalanceBotEnv(gym.Env):
                 done = True
         else:
             self.down_count = 0
+            reward += survival_bonus
 
 
         if cost:
