@@ -12,7 +12,7 @@ import pybullet as p
 import pybullet_data
 
 
-class KartEnv(gym.Env):
+class HoverboardEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
     def __init__(self, objective="Goal", cost="Hazard", render=False):
