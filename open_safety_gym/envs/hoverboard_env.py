@@ -171,7 +171,7 @@ class KartEnv(gym.Env):
 
         shift = [0, -0.02, 0.0]
         meshScale = [.10, .10, .10]
-        self.bot_id = p.loadURDF(os.path.join(path, "kart.xml"),\
+        self.bot_id = p.loadURDF(os.path.join(path, "hoverboard.xml"),\
             cube_start_position,\
             cube_start_orientation)
 

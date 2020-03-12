@@ -1,0 +1,101 @@
+?xml version="1.0"?>
+<robot name="kart">
+
+    <material name="gray">
+        <color rgba="0.3 0.3 0.3 1"/>
+    </material>
+
+    <material name="blue">
+        <color rgba="0.0 0.0 1.0 1"/>
+    </material>
+
+    <material name="black">
+        <color rgba="0.05 0.03 0.03 1"/>
+    </material>
+
+  <link name="block">
+    <visual>
+      <geometry>
+          <box size="0.25 0.1 0.1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.0 0.000 0.0"/>
+      <material name="gray"/>
+    </visual>
+    <collision>
+      <geometry>
+          <box size="0.25 0.2 0.1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0.0 0.050 0.0"/>
+      <contact_coefficents mu="0.0" kp="0.0" kd="0.0"/>
+    </collision>
+    <inertial>
+      <mass value="0.9"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.3"/>
+    </inertial>
+  </link>
+
+
+  <link name="wheel_a">
+    <visual>
+      <geometry>
+          <cylinder length="0.025" radius="0.075"/>
+      </geometry>
+      <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
+      <material name="gray"/>
+    </visual>
+    <collision>
+      <geometry>
+          <cylinder length="0.025" radius="0.075"/>
+      </geometry>
+      <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
+      <contact_coefficents mu="0.8"/>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.001"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
+    </inertial>
+  </link>
+  
+  <link name="wheel_b">
+    <visual>
+      <geometry>
+          <cylinder length="0.025" radius="0.075"/>
+      </geometry>
+      <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
+      <material name="gray"/>
+    </visual>
+    <collision>
+      <geometry>
+          <cylinder length="0.025" radius="0.075"/>
+      </geometry>
+      <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
+      <contact_coefficents mu="0.8"/>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.001"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
+    </inertial>
+  </link>
+
+  <joint name="block_wheel_a" type="continuous">
+    <parent link="block"/>
+    <child link="wheel_a"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.0"/>
+    <origin rpy="0 0 0" xyz="-0.145 0.0 0.0"/>
+  </joint>
+
+
+  <joint name="block_wheel_b" type="continuous">
+    <parent link="block"/>
+    <child link="wheel_b"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.0"/>
+    <origin rpy="0 0 0" xyz="0.145 0.0 0.0"/>
+  </joint>
+
+
+</robot>
