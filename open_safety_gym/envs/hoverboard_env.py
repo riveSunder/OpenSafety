@@ -16,7 +16,7 @@ class HoverboardEnv(gym.Env):
     metadata = {"render.modes": ["human"]}
 
     def __init__(self, objective="Goal", cost="Hazard", render=False):
-        super(KartEnv, self).__init__()
+        super(HoverboardEnv, self).__init__()
 
         # physics parameters go here
         self.k_friction = 0.001
