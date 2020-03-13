@@ -1,6 +1,7 @@
 import time
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 import gym
@@ -27,7 +28,12 @@ class HoverboardEnv(gym.Env):
         self.force_scale = 256
 
         # action and observation spaces
-        self.observation_space = spaces.Box(low=-25, high=25, shape=(18,))
+        self.dim_x = 8
+        self.dim_y = 8
+        #self.observation_space = spaces.Box(low=-25, high=25, shape=(18,))
+        self.observation_space = spaces.Box(low=0, high=255, \
+                shape=(self.dim_x*self.dim_y*4,))
+
         self.action_space = spaces.Box(low=np.array([-1.0, -1.0]),\
                 high=np.array([1.0, 1.0]), dtype=np.float64)
 
@@ -112,14 +118,55 @@ class HoverboardEnv(gym.Env):
 
     def compute_obs(self):
         cube_position, cube_orientation = p.getBasePositionAndOrientation(self.bot_id)
-        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
+
+        #cube_orientation = p.getEulerFromQuaternion(cube_orientation)
         v_linear, v_angular= p.getBaseVelocity(self.bot_id, self.physicsClient)
 
         # get position of block
 
         block_state = p.getLinkState(bodyUniqueId=self.bot_id,\
-                                    linkIndex=1)
-        
+                linkIndex=1)
+
+
+        fov, aspect, nearplane, farplane = 60, 1.0, 0.01, 100
+        projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, nearplane, farplane)
+        # Center of mass position and orientation (of link-7)
+        com_p, com_o, _, _, _, _ = p.getLinkState(self.bot_id, 0, \
+                computeForwardKinematics=True)
+        com_p, com_o = cube_position, cube_orientation
+        rot_matrix = p.getMatrixFromQuaternion(com_o)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+        # Initial vectors
+        init_camera_vector = np.array((0, 1, 0)) # z-axis
+        init_up_vector = (0, 0, 1) # y-axis
+        # Rotated vectors
+        camera_vector = rot_matrix.dot(init_camera_vector)
+        up_vector = rot_matrix.dot(init_up_vector)
+        view_matrix = p.computeViewMatrix(com_p, com_p + 0.1 * camera_vector, up_vector)
+        view_image = p.getCameraImage(self.dim_x, self.dim_y, view_matrix, projection_matrix)
+
+#        distance = 10
+#
+#        view_matrix = p.computeViewMatrixFromYawPitchRoll(list(cube_position), \
+#                distance,\
+#                cube_orientation[0], cube_orientation[1], cube_orientation[2],\
+#                upAxisIndex=2)
+#
+#        view_image = p.getCameraImage(width=128,height=128,viewMatrix=view_matrix)
+#
+#        for el in view_image:
+#            print(np.shape(el), type(el))
+#        plt.figure()
+#        plt.imshow(np.array(view_image[3]).reshape(128,128))
+#        plt.figure()
+#        plt.imshow(np.array(view_image[4]).reshape(128,128))
+#        plt.figure()
+#        plt.imshow(np.array(view_image[2]).reshape(128,128,4))
+#        plt.show()
+
+
+        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
+
         done = False
         if self.objective == "Goal":
             hazard_position, _ = p.getBasePositionAndOrientation(self.hazard_id)
@@ -154,7 +201,10 @@ class HoverboardEnv(gym.Env):
             p.changeVisualShape(self.bot_id, -1, rgbaColor=[0.3, 0.3, 0.3, 1])
 
 
-        obs = hazard_position + goal_position + cube_position + cube_orientation + v_linear + v_angular
+        if(0):
+            obs = hazard_position + goal_position + cube_position + cube_orientation + v_linear + v_angular
+        else:
+            obs = np.array(view_image[2])# .reshape(self.dim_x,self.dim_y,4)
         info = {"cost": cost, "reward": reward}
 
         return obs, reward, done, info
