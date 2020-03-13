@@ -187,10 +187,11 @@ class HoverboardEnv(gym.Env):
                 # don't want to penalize agent for a difficult random
                 # goal location, so scale reward by how far away it was
                 reward = 1.0 
-                reward += self.goal_dist - dist_goal 
+                #reward += self.goal_dist - dist_goal 
                 self.set_goal()
             else: 
-                reward = self.goal_dist - dist_goal 
+                reward = 0.0
+                #reward = self.goal_dist - dist_goal 
                 self.goal_dist = dist_goal
 
         if cost:
