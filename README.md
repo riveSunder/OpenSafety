@@ -7,7 +7,7 @@
 
 The objectives of this project are to: 
 
-* Investigate questions about the validity of the reward hypothesis []() vs. the utility of breaking out scores for safety and reward separately. 
+* Investigate questions about the validity of the [reward hypothesis](http://www.incompleteideas.net/rlai.cs.ualberta.ca/RLAI/rewardhypothesis.html) vs. the utility of breaking out scores for safety and reward separately. 
 * Develop tools for building and training safe agents
 * For yours truly to gain proficiency working with and on PyBullet physics engine and related robotics simulation practices.
 
@@ -35,7 +35,7 @@ obs, reward, done, info = env.step(action)
 
 The safety score (aka cost) is returned in `info['cost']` 
 
-You may also be interested in installing the (WIP) [SafeAgents repository]() in the same virtual environment, where I am working on evolving agents that respect safety constraints imposed by OpenSafetyGym.
+You may also be interested in installing the (WIP) [SafeAgents repository](https://github.com/riveSunder/SafeAgents) in the same virtual environment, where I am working on evolving agents that respect safety constraints imposed by OpenSafetyGym.
 
 ```
 cd ../
