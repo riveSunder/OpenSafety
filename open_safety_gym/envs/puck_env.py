@@ -197,9 +197,6 @@ class PuckEnv(gym.Env):
         return force
 
     def step(self, action):
-        
-        #p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
-        #        angularVelocity=[0, 0, action[1]])
 
         force = self.compute_force(action)
 
@@ -244,19 +241,6 @@ if __name__ == "__main__":
                                 collisionFrameOrientation=orientation,
                                 meshScale=meshScale)
 
-#    visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE,
-#                                radius=0.1,
-#                                rgbaColor=[1, 1, 1, 1],
-#                                specularColor=[0.8, .0, 0],
-#                                visualFramePosition=shift,
-#                                visualFrameOrientation=orientation,
-#                                meshScale=meshScale)
-#    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_SPHERE,
-#                                radius=0.1,
-#                                collisionFramePosition=shift,
-#                                collisionFrameOrientation=orientation,
-#                                meshScale=meshScale)
-
     rangex = 1
     rangey = 1
     for i in range(rangex):
@@ -274,7 +258,6 @@ if __name__ == "__main__":
         time.sleep(0.025)
         p.stepSimulation()
         action = env.action_space.sample()
-        #action = np.array([0, 5])
         obs, reward, done, info = env.step(action)
 
         

@@ -218,9 +218,6 @@ class BalanceBotEnv(gym.Env):
 
     def step(self, action):
         
-        #p.resetBaseVelocity(self.bot_id, linearVelocity=[action[0], 0, 0], \
-        #        angularVelocity=[0, 0, action[1]])
-
         self.apply_force(action)
 
         p.stepSimulation()
@@ -255,19 +252,6 @@ if __name__ == "__main__":
                                 collisionFramePosition=shift,
                                 collisionFrameOrientation=orientation,
                                 meshScale=meshScale)
-
-#    visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE,
-#                                radius=0.1,
-#                                rgbaColor=[1, 1, 1, 1],
-#                                specularColor=[0.8, .0, 0],
-#                                visualFramePosition=shift,
-#                                visualFrameOrientation=orientation,
-#                                meshScale=meshScale)
-#    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_SPHERE,
-#                                radius=0.1,
-#                                collisionFramePosition=shift,
-#                                collisionFrameOrientation=orientation,
-#                                meshScale=meshScale)
 
     rangex = 1
     rangey = 1
