@@ -28,8 +28,8 @@ class BalanceBotEnv(gym.Env):
 
         # action and observation spaces
         self.observation_space = spaces.Box(low=-25, high=25, shape=(18,))
-        self.action_space = spaces.Box(low=np.array([-1.0, -1.0]),\
-                high=np.array([1.0, 1.0]), dtype=np.float64)
+        self.action_space = spaces.Box(low=np.array([-10.0, -10.0]),\
+                high=np.array([10.0, 10.0]), dtype=np.float64)
 
         # start physics client
         if render:
@@ -266,7 +266,7 @@ if __name__ == "__main__":
                               useMaximalCoordinates=False)
 
     time.sleep(2.)
-    for ii in range(500):
+    for ii in range(200):
         time.sleep(0.025)
         p.stepSimulation()
         action = env.action_space.sample()
