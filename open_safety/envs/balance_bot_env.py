@@ -27,7 +27,7 @@ class BalanceBotEnv(gym.Env):
         self.cost = cost
 
         # action and observation spaces
-        self.observation_space = spaces.Box(low=-25, high=25, shape=(18,))
+        self.observation_space = spaces.Box(low=-25, high=25, shape=(32,))
         self.action_space = spaces.Box(low=np.array([-10.0, -10.0]),\
                 high=np.array([10.0, 10.0]), dtype=np.float64)
 
