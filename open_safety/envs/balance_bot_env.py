@@ -21,6 +21,7 @@ class BalanceBotEnv(gym.Env):
         # physics parameters go here
         self.k_friction = 0.001
         self.down_count = 0
+        self.max_steps = 512
 
         # parameters describing the environment go here
         self.objective = 1 if "Distance" in objective else 3
@@ -28,8 +29,8 @@ class BalanceBotEnv(gym.Env):
 
         # action and observation spaces
         self.observation_space = spaces.Box(low=-25, high=25, shape=(32,))
-        self.action_space = spaces.Box(low=np.array([-10.0, -10.0]),\
-                high=np.array([10.0, 10.0]), dtype=np.float64)
+        self.action_space = spaces.Box(low=np.array([-1.0, -1.0]),\
+                high=np.array([1.0, 1.0]), dtype=np.float64)
 
         # start physics client
         if render:
@@ -96,7 +97,7 @@ class BalanceBotEnv(gym.Env):
     def reset(self):
         p.resetSimulation()
         p.setGravity(0, 0, -10)
-        p.setTimeStep(0.01)
+        p.setTimeStep(0.050)
         plane_ID = p.loadURDF("plane.urdf")
 
         cube_start_position = [0, 0, 0.1]
@@ -118,6 +119,8 @@ class BalanceBotEnv(gym.Env):
         
         obs, reward, done, info = self.compute_obs()
 
+        self.steps_taken = 0
+
         return obs
 
 
@@ -137,10 +140,15 @@ class BalanceBotEnv(gym.Env):
 
     def step(self, action):
         
-        self.apply_force(action)
+        self.apply_force(10*action)
 
         p.stepSimulation()
         obs, reward, done, info = self.compute_obs()
+        self.steps_taken += 1
+
+        if self.steps_taken > self.max_steps:
+            done = True
+
         return obs, reward, done, info
 
     def render(self, mode="human", close=False):
