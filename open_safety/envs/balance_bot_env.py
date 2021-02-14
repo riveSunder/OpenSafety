@@ -151,8 +151,12 @@ class BalanceBotEnv(gym.Env):
 
         return obs, reward, done, info
 
-    def render(self, mode="human", close=False):
-        pass
+    def render(self, mode="rgb_array", close=False):
+
+        my_image = p.getCameraImage(width=512, height=512)
+
+        return my_image
+
 
 if __name__ == "__main__":
 
