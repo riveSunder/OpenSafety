@@ -1,4 +1,4 @@
-?xml version="1.0"?>
+<?xml version="1.0"?>
 <robot name="balance_bot">
 
     <material name="gray">
@@ -12,14 +12,14 @@
   <link name="block">
     <visual>
       <geometry>
-          <box size="0.25 0.075 0.6"/>
+          <box size="0.25 0.25 0.6"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0.00 0.3"/>
       <material name="gray"/>
     </visual>
     <collision>
       <geometry>
-          <box size="0.25 0.075 0.6"/>
+          <box size="0.25 0.25 0.6"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0.0 0.3"/>
       <contact_coefficents mu="0.0" kp="0.0" kd="0.0"/>
@@ -34,14 +34,14 @@
   <link name="wheel_a">
     <visual>
       <geometry>
-          <cylinder length="0.025" radius="0.1"/>
+          <cylinder length="0.125" radius="0.2"/>
       </geometry>
       <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
       <material name="gray"/>
     </visual>
     <collision>
       <geometry>
-          <cylinder length="0.025" radius="0.1"/>
+          <cylinder length="0.125" radius="0.2"/>
       </geometry>
       <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
       <contact_coefficents mu="0.8"/>
@@ -56,14 +56,14 @@
   <link name="wheel_b">
     <visual>
       <geometry>
-          <cylinder length="0.025" radius="0.1"/>
+          <cylinder length="0.125" radius="0.2"/>
       </geometry>
       <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
       <material name="gray"/>
     </visual>
     <collision>
       <geometry>
-          <cylinder length="0.025" radius="0.1"/>
+          <cylinder length="0.125" radius="0.2"/>
       </geometry>
       <origin rpy="0 1.5797963 0" xyz="0.0 0.00 0.0"/>
       <contact_coefficents mu="0.8"/>

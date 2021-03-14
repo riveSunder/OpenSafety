@@ -79,7 +79,7 @@ class BalanceBotEnv(gym.Env):
 #                                    linkIndex=1)
         block_position = cube_position[2]
 
-        if block_position < 0.125:
+        if block_position < 0.25:
             cost += 1.0
 
         if cost:
@@ -100,7 +100,7 @@ class BalanceBotEnv(gym.Env):
         p.setTimeStep(0.050)
         plane_ID = p.loadURDF("plane.urdf")
 
-        cube_start_position = [0, 0, 0.1]
+        cube_start_position = [0, 0, 0.25]
         cube_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         path = os.path.abspath(os.path.dirname(__file__))   
 
@@ -197,8 +197,8 @@ if __name__ == "__main__":
                               useMaximalCoordinates=False)
 
     time.sleep(2.)
-    for ii in range(500):
-        time.sleep(0.025)
+    for ii in range(250):
+        time.sleep(0.0125)
         p.stepSimulation()
         action = env.action_space.sample()
         #action = np.array([0, 5])
@@ -207,5 +207,6 @@ if __name__ == "__main__":
         print("reward: {:.3f}, cost: {:.3f}".format(reward, info["cost"]))
     
     import pdb; pdb.set_trace()
+
 
         
