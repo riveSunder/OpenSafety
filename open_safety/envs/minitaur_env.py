@@ -145,7 +145,7 @@ class MinitaurDuckBulletEnv(gym.Env):
     self._on_rack = on_rack
     self._cam_dist = 1.0
     self._cam_yaw = 0
-    self._duckId = -1
+    self.cargo_id = -1
     self._cam_pitch = -30
     self._hard_reset = True
     self._kd_for_pd_controllers = kd_for_pd_controllers
@@ -183,6 +183,10 @@ class MinitaurDuckBulletEnv(gym.Env):
   def configure(self, args):
     self._args = args
 
+  def make_cargo(self):
+
+    self.cargo_id = self._pybullet_client.loadURDF("%s/duck_vhacd.urdf" % self._urdf_root,duckStartPos,duckStartOrn)
+
   def _reset(self):
     if self._hard_reset:
       self._pybullet_client.resetSimulation()
@@ -190,7 +194,9 @@ class MinitaurDuckBulletEnv(gym.Env):
           numSolverIterations=int(self._num_bullet_solver_iterations))
       self._pybullet_client.setTimeStep(self._time_step)
       self._groundId = self._pybullet_client.loadURDF("%s/plane.urdf" % self._urdf_root)
-      self._duckId = self._pybullet_client.loadURDF("%s/duck_vhacd.urdf" % self._urdf_root,duckStartPos,duckStartOrn)
+
+      self.make_cargo()
+
       self._pybullet_client.setGravity(0, 0, -10)
       acc_motor = self._accurate_motor_model_enabled
       motor_protect = self._motor_overheat_protection
@@ -210,7 +216,7 @@ class MinitaurDuckBulletEnv(gym.Env):
           kd_for_pd_controllers=self._kd_for_pd_controllers))
     else:
       self.minitaur.Reset(reload_urdf=False)
-      self._pybullet_client.resetBasePositionAndOrientation(self._duckId,duckStartPos,duckStartOrn)
+      self._pybullet_client.resetBasePositionAndOrientation(self.cargo_id,duckStartPos,duckStartOrn)
     if self._env_randomizer is not None:
       self._env_randomizer.randomize_env(self)
 
@@ -276,9 +282,9 @@ class MinitaurDuckBulletEnv(gym.Env):
     info = {"cost": 1.0 * self.lost_duck()}
 
     if info["cost"]:
-        pybullet.changeVisualShape(self._duckId, -1, rgbaColor=[1.0,0,0,1])
+        pybullet.changeVisualShape(self.cargo_id, -1, rgbaColor=[1.0,0,0,1])
     else:
-        pybullet.changeVisualShape(self._duckId, -1, rgbaColor=[0,1.0,0,1])
+        pybullet.changeVisualShape(self.cargo_id, -1, rgbaColor=[0,1.0,0,1])
 
 
     return np.array(self._noisy_observation()), reward, done, info
@@ -339,7 +345,7 @@ class MinitaurDuckBulletEnv(gym.Env):
     return np.array(self._observation[BASE_ORIENTATION_OBSERVATION_INDEX:])
 
   def lost_duck(self):
-    points = self._pybullet_client.getContactPoints(self._duckId, self._groundId);
+    points = self._pybullet_client.getContactPoints(self.cargo_id, self._groundId);
     return len(points)>0
 
   def is_fallen(self):
@@ -406,9 +412,93 @@ class MinitaurDuckBulletEnv(gym.Env):
     seed = _seed
     step = _step
 
+
+class MinitaurCubeBulletEnv(MinitaurDuckBulletEnv):
+
+    metadata = {
+      "render.modes": ["human", "rgb_array"],
+      "video.frames_per_second": 50
+    }
+
+    def __init__(self, render=False):
+        self.k_friction = 0.5
+        super(MinitaurCubeBulletEnv, self).__init__(render=render)
+
+
+    def make_cargo(self):
+
+        orientation = pybullet.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.0, 0.0, 0.325]
+        mesh_scale = [0.1,0.1,0.1]
+
+
+        visual_id = pybullet.createVisualShape(shapeType=pybullet.GEOM_BOX,
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = pybullet.createCollisionShape(shapeType=pybullet.GEOM_BOX,
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+
+        self.cargo_id = pybullet.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+
+        pybullet.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        pybullet.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        pybullet.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+
+class MinitaurSphereBulletEnv(MinitaurDuckBulletEnv):
+
+    metadata = {
+      "render.modes": ["human", "rgb_array"],
+      "video.frames_per_second": 50
+    }
+
+    def __init__(self, render=False):
+        self.k_friction = 0.5
+        super(MinitaurSphereBulletEnv, self).__init__(render=render)
+
+
+
+    def make_cargo(self):
+
+        orientation = pybullet.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.0, 0.0, 0.325]
+        mesh_scale = [0.1,0.1,0.1]
+
+
+        visual_id = pybullet.createVisualShape(shapeType=pybullet.GEOM_SPHERE,
+                                    radius=0.1,\
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = pybullet.createCollisionShape(shapeType=pybullet.GEOM_SPHERE,
+                                    radius=0.1,\
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+        self.cargo_id = pybullet.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+        pybullet.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        pybullet.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        pybullet.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+
 if __name__ == "__main__":
 
-    env = MinitaurDuckBulletEnv(render=True)
+
+    env = MinitaurCubeBulletEnv(render=True)
 
     obs = env.reset()
 
