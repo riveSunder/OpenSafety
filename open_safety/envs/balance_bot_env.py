@@ -19,7 +19,7 @@ class BalanceBotEnv(gym.Env):
         super(BalanceBotEnv, self).__init__()
 
         # physics parameters go here
-        self.k_friction = 1.0
+        self.k_friction = 0.5
         self.down_count = 0
         self.max_steps = 512
 
@@ -171,13 +171,24 @@ class DuckBalanceBotEnv(BalanceBotEnv):
 
         cube_position, cube_orientation = p.getBasePositionAndOrientation(self.cargo_id)
         cube_orientation = p.getEulerFromQuaternion(cube_orientation)
-
         v_linear, v_angular= p.getBaseVelocity(self.bot_id, self.physicsClient)
+
+        cargo_position, cargo_orientation = p.getBasePositionAndOrientation(self.cargo_id)
+        cargo_orientation = p.getEulerFromQuaternion(cargo_orientation)
+        cargo_v_linear, cargo_v_angular= p.getBaseVelocity(self.cargo_id, self.physicsClient)
 
         num_joints = p.getNumJoints(self.bot_id, self.physicsClient)
         
         obs = np.array(v_linear)
-        obs = np.append(obs, np.array(v_angular))
+
+        for elem in [v_angular, \
+                np.array(cube_position) - np.array(cargo_position),\
+                np.array(cube_orientation) - np.array(cargo_orientation),\
+                cargo_v_linear,\
+                cargo_v_angular]:
+
+            obs = np.append(obs, np.array(elem))
+        
         cost = 0.0
         reward = 0.0
 
@@ -320,6 +331,7 @@ class SphereBalanceBotEnv(DuckBalanceBotEnv):
     def __init__(self, objective="Distance", cost="Drop", render=False):
         super(SphereBalanceBotEnv, self).__init__(render=render)
 
+        self.observation_space = spaces.Box(low=-25, high=25, shape=(44,))
 
     def make_cargo(self):
 
@@ -348,9 +360,10 @@ class SphereBalanceBotEnv(DuckBalanceBotEnv):
         p.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
         p.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
         p.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+
 if __name__ == "__main__":
 
-    env = SphereBalanceBotEnv(render=True)
+    env = DuckBalanceBotEnv(render=True)
 
     obs = env.reset()
     info = p.getDynamicsInfo(env.bot_id, -1)
@@ -388,7 +401,7 @@ if __name__ == "__main__":
                               useMaximalCoordinates=False)
 
     time.sleep(2.)
-    for ii in range(100):
+    for ii in range(300):
         time.sleep(0.00125)
         p.stepSimulation()
         action = env.action_space.sample()
@@ -400,3 +413,4 @@ if __name__ == "__main__":
 
 
         
+    import pdb; pdb.set_trace()
