@@ -140,7 +140,7 @@ class BalanceBotEnv(gym.Env):
 
     def step(self, action):
         
-        self.apply_force(10*action)
+        self.apply_force(20*action)
 
         p.stepSimulation()
         obs, reward, done, info = self.compute_obs()
@@ -264,7 +264,7 @@ class DuckBalanceBotEnv(BalanceBotEnv):
     def reset(self):
         p.resetSimulation()
         p.setGravity(0, 0, -10)
-        p.setTimeStep(0.0050)
+        p.setTimeStep(0.010)
         plane_ID = p.loadURDF("plane.urdf")
 
         cube_start_position = [0, 0, 0.225]
@@ -413,4 +413,3 @@ if __name__ == "__main__":
 
 
         
-    import pdb; pdb.set_trace()
