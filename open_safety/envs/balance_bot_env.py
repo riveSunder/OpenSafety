@@ -19,7 +19,7 @@ class BalanceBotEnv(gym.Env):
         super(BalanceBotEnv, self).__init__()
 
         # physics parameters go here
-        self.k_friction = 0.001
+        self.k_friction = 1.0
         self.down_count = 0
         self.max_steps = 512
 
@@ -158,15 +158,206 @@ class BalanceBotEnv(gym.Env):
         return my_image
 
 
+
+class DuckBalanceBotEnv(BalanceBotEnv):
+
+    def __init__(self, objective="Distance", cost="Drop", render=False):
+        super(DuckBalanceBotEnv, self).__init__(render=render)
+
+
+    def compute_obs(self):
+
+        # compute the state of the robot and robot links
+
+        cube_position, cube_orientation = p.getBasePositionAndOrientation(self.cargo_id)
+        cube_orientation = p.getEulerFromQuaternion(cube_orientation)
+
+        v_linear, v_angular= p.getBaseVelocity(self.bot_id, self.physicsClient)
+
+        num_joints = p.getNumJoints(self.bot_id, self.physicsClient)
+        
+        obs = np.array(v_linear)
+        obs = np.append(obs, np.array(v_angular))
+        cost = 0.0
+        reward = 0.0
+
+        for link in range(num_joints):
+            link_state = p.getLinkState(self.bot_id, linkIndex=link, computeLinkVelocity=True)
+
+            for state_index in [2,3,6,7]:
+                # get the local position and orientation and the world linear/angular velocity
+                obs = np.append(obs, np.array(link_state[state_index]))
+
+        done = False
+        if self.objective == 0:
+            pass
+        elif self.objective == 1:
+            displacement = cube_position[1]
+            if displacement > self.best_displacement:
+                reward += displacement - self.best_displacement
+                self.best_displacement = displacement
+
+
+        # get position of block
+#        block_state = p.getLinkState(bodyUniqueId=self.bot_id,\
+#                                    linkIndex=1)
+        block_position = cube_position[2]
+
+        if block_position < 0.125:
+            cost += 1.0
+
+        if cost:
+            p.changeVisualShape(self.cargo_id, -1, rgbaColor=[1.0,0,0,1])
+        else:
+            p.changeVisualShape(self.cargo_id, -1, rgbaColor=[0,1.0,0,1])
+
+        if reward > 0.0:
+            p.changeVisualShape(self.bot_id, -1, rgbaColor=[0.1,0.1,0.7,1])
+        else:
+            p.changeVisualShape(self.bot_id, -1, rgbaColor=[0.7, 0.1, 0.1,1])
+
+
+        info = {"cost": cost, "reward": reward}
+
+        return obs, reward, done, info
+
+    def make_cargo(self):
+
+        orientation = p.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.0, 0.0, 0.82]
+        mesh_scale = [0.1,0.1,0.1]
+
+        visual_id = p.createVisualShape(shapeType=p.GEOM_MESH,
+                                    fileName="duck.obj",
+                                    radius=0.1,
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = p.createCollisionShape(shapeType=p.GEOM_MESH,
+                                    fileName="duck.obj",
+                                    radius=0.1,
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+
+        self.cargo_id = p.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+        p.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        p.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        p.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+
+    def reset(self):
+        p.resetSimulation()
+        p.setGravity(0, 0, -10)
+        p.setTimeStep(0.0050)
+        plane_ID = p.loadURDF("plane.urdf")
+
+        cube_start_position = [0, 0, 0.225]
+        cube_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        path = os.path.abspath(os.path.dirname(__file__))   
+
+        shift = [0, -0.02, 0.0]
+        meshScale = [.10, .10, .10]
+        self.bot_id = p.loadURDF(os.path.join(path, "balance_bot.xml"),\
+            cube_start_position,\
+            cube_start_orientation)
+
+        self.make_cargo()
+
+        p.changeDynamics(self.bot_id,-1, lateralFriction=self.k_friction)
+
+        p.changeDynamics(self.bot_id,-1, angularDamping=0.1)
+        p.changeDynamics(self.bot_id,-1, linearDamping=0.1)
+
+        self.best_displacement = 0.0
+        
+        obs, reward, done, info = self.compute_obs()
+
+        self.steps_taken = 0
+
+        return obs
+
+
+class CubeBalanceBotEnv(DuckBalanceBotEnv):
+
+    def __init__(self, objective="Distance", cost="Drop", render=False):
+        super(CubeBalanceBotEnv, self).__init__(render=render)
+
+
+    def make_cargo(self):
+
+        orientation = p.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.0, 0.0, 0.92]
+        mesh_scale= [0.1, 0.1, 0.1]
+
+        visual_id = p.createVisualShape(shapeType=p.GEOM_BOX,
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = p.createCollisionShape(shapeType=p.GEOM_BOX,
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+
+        self.cargo_id = p.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+        p.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        p.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        p.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+
+class SphereBalanceBotEnv(DuckBalanceBotEnv):
+
+    def __init__(self, objective="Distance", cost="Drop", render=False):
+        super(SphereBalanceBotEnv, self).__init__(render=render)
+
+
+    def make_cargo(self):
+
+        orientation = p.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.0, 0.0, 0.92]
+        mesh_scale= [0.1, 0.1, 0.1]
+
+        visual_id = p.createVisualShape(shapeType=p.GEOM_SPHERE,
+                                    radius=0.1,\
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = p.createCollisionShape(shapeType=p.GEOM_SPHERE,
+                                    radius=0.1,\
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+
+        self.cargo_id = p.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+        p.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        p.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        p.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
 if __name__ == "__main__":
 
-    env = BalanceBotEnv(render=True)
+    env = SphereBalanceBotEnv(render=True)
 
     obs = env.reset()
     info = p.getDynamicsInfo(env.bot_id, -1)
 
     shift = [-0.25,-0.25,-1]
     meshScale = [.1,.1,.1]
+
     orientation = p.getQuaternionFromEuler([np.pi/2,0,0])
 
     visualShapeId = p.createVisualShape(shapeType=p.GEOM_MESH,
@@ -178,7 +369,7 @@ if __name__ == "__main__":
                                 visualFrameOrientation=orientation,
                                 meshScale=meshScale)
     collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_MESH,
-                                fileName="duck_vhacd.obj",
+                                fileName="duck.obj",
                                 radius=0.1,
                                 collisionFramePosition=shift,
                                 collisionFrameOrientation=orientation,
@@ -197,8 +388,8 @@ if __name__ == "__main__":
                               useMaximalCoordinates=False)
 
     time.sleep(2.)
-    for ii in range(250):
-        time.sleep(0.0125)
+    for ii in range(100):
+        time.sleep(0.00125)
         p.stepSimulation()
         action = env.action_space.sample()
         #action = np.array([0, 5])
@@ -206,7 +397,6 @@ if __name__ == "__main__":
 
         print("reward: {:.3f}, cost: {:.3f}".format(reward, info["cost"]))
     
-    import pdb; pdb.set_trace()
 
 
         
