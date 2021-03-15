@@ -164,6 +164,7 @@ class DuckBalanceBotEnv(BalanceBotEnv):
     def __init__(self, objective="Distance", cost="Drop", render=False):
         super(DuckBalanceBotEnv, self).__init__(render=render)
 
+        self.observation_space = spaces.Box(low=-25, high=25, shape=(44,))
 
     def compute_obs(self):
 
@@ -298,6 +299,7 @@ class CubeBalanceBotEnv(DuckBalanceBotEnv):
     def __init__(self, objective="Distance", cost="Drop", render=False):
         super(CubeBalanceBotEnv, self).__init__(render=render)
 
+        self.observation_space = spaces.Box(low=-25, high=25, shape=(44,))
 
     def make_cargo(self):
 
