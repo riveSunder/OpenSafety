@@ -28,15 +28,12 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
                renders=True):
 
         self.k_friction = 0.5
-        print("There is a self.k_friction. it is {}".format(self.k_friction))
 
         super(SphereRacecarEnv, self).__init__(urdfRoot=urdfRoot,\
                 actionRepeat=actionRepeat,\
                 isEnableSelfCollision=isEnableSelfCollision,\
                 isDiscrete=isDiscrete,\
                 renders=renders)
-
-
 
     def make_cargo(self):
 
@@ -81,7 +78,6 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
 #        if len(points) > 0:
 #            cost += 1.0
 
-        print(cargo_position)
         if cargo_position[2]  < 0.20:
             cost += 1.0
 
@@ -103,7 +99,7 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
             -> https://github.com/bulletphysics/bullet3/blob/master/LICENSE.txt
         """
 
-        action = action * 2
+        action = action * 8.0
 
         # code from https://github.com/bulletphysics/bullet3/
         if (self._renders):
@@ -122,8 +118,8 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
         self._racecar.applyAction(realaction)
         for i in range(self._actionRepeat):
           self._p.stepSimulation()
-          if self._renders:
-            time.sleep(self._timeStep)
+          #if self._renders:
+          #  time.sleep(self._timeStep)
           self._observation = self.getExtendedObservation()
 
           if self._termination():
@@ -181,10 +177,55 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
         return np.array(self._observation)
 
 
+class CubeRacecarEnv(SphereRacecarEnv):
+
+    def __init__(self,\
+               urdfRoot=pybullet_data.getDataPath(),
+               actionRepeat=10,
+               isEnableSelfCollision=True,
+               isDiscrete=False,
+               renders=True):
+
+        self.k_friction = 0.5
+
+        super(CubeRacecarEnv, self).__init__(urdfRoot=urdfRoot,\
+                actionRepeat=actionRepeat,\
+                isEnableSelfCollision=isEnableSelfCollision,\
+                isDiscrete=isDiscrete,\
+                renders=renders)
+
+    def make_cargo(self):
+
+        orientation = self._p.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.15, 0.0, 0.3]
+        mesh_scale = [0.1,0.1,0.1]
+
+        visual_id = self._p.createVisualShape(shapeType=p.GEOM_BOX,
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = self._p.createCollisionShape(shapeType=p.GEOM_BOX,
+                                    halfExtents=[0.1, 0.1, 0.1],
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+
+        self.cargo_id = self._p.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+        self._p.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        self._p.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        self._p.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+        
+        self.plane_id =self._p.loadURDF(self._urdfRoot + "/plane.urdf")
 
 if __name__ == "__main__":
 
-    env = SphereRacecarEnv() 
+    env = CubeRacecarEnv() 
     #env = gym.make("RacecarZedBulletEnv-v0")
 
 
@@ -197,6 +238,6 @@ if __name__ == "__main__":
 
     obs = env.reset()
 
-    for step in range(10):
+    for step in range(100):
 
-        env.step(np.array([1.0, -1.0]))
+        env.step(np.array([1.0, np.random.randn()]))
