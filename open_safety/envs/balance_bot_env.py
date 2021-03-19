@@ -153,7 +153,7 @@ class BalanceBotEnv(gym.Env):
 
     def render(self, mode="rgb_array", close=False):
 
-        my_image = p.getCameraImage(width=512, height=512)
+        my_image = p.getCameraImage(width=512, height=512)[2]
 
         return my_image
 
