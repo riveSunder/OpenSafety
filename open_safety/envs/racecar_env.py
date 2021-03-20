@@ -37,6 +37,7 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
 
     def make_cargo(self):
 
+        self.height_threshold = 0.20
         orientation = self._p.getQuaternionFromEuler([np.pi/2,0,0])
         cargo_shift = [0.15, 0.0, 0.28]
         mesh_scale = [0.1,0.1,0.1]
@@ -78,7 +79,7 @@ class SphereRacecarEnv(RacecarZEDGymEnv):
 #        if len(points) > 0:
 #            cost += 1.0
 
-        if cargo_position[2]  < 0.20:
+        if cargo_position[2]  < self.height_threshold:
             cost += 1.0
 
         
@@ -196,6 +197,7 @@ class CubeRacecarEnv(SphereRacecarEnv):
 
     def make_cargo(self):
 
+        self.height_threshold = 0.25
         orientation = self._p.getQuaternionFromEuler([np.pi/2,0,0])
         cargo_shift = [0.15, 0.0, 0.3]
         mesh_scale = [0.1,0.1,0.1]
@@ -223,21 +225,64 @@ class CubeRacecarEnv(SphereRacecarEnv):
         
         self.plane_id =self._p.loadURDF(self._urdfRoot + "/plane.urdf")
 
+class DuckRacecarEnv(SphereRacecarEnv):
+
+    def __init__(self,\
+               urdfRoot=pybullet_data.getDataPath(),
+               actionRepeat=10,
+               isEnableSelfCollision=True,
+               isDiscrete=False,
+               renders=True):
+
+        self.k_friction = 0.5
+
+        super(DuckRacecarEnv, self).__init__(urdfRoot=urdfRoot,\
+                actionRepeat=actionRepeat,\
+                isEnableSelfCollision=isEnableSelfCollision,\
+                isDiscrete=isDiscrete,\
+                renders=renders)
+
+    def make_cargo(self):
+
+        self.height_threshold = 0.13
+        orientation = self._p.getQuaternionFromEuler([np.pi/2,0,0])
+        cargo_shift = [0.15, 0.0, 0.175]
+        mesh_scale = [0.1,0.1,0.1]
+
+        visual_id = self._p.createVisualShape(shapeType=p.GEOM_MESH,
+                                    fileName= self._urdfRoot + "/duck.obj",
+                                    radius=0.1,
+                                    rgbaColor=[1, 0, 1, 1],
+                                    specularColor=[0.8, .0, 0],
+                                    visualFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+        collision_id = self._p.createCollisionShape(shapeType=p.GEOM_MESH,
+                                    fileName= self._urdfRoot + "/duck.obj",
+                                    radius=0.1,
+                                    collisionFrameOrientation=orientation,
+                                    meshScale=mesh_scale)
+
+
+        self.cargo_id = self._p.createMultiBody(baseMass=0.1,\
+                                        baseCollisionShapeIndex=collision_id,\
+                                        baseVisualShapeIndex=visual_id,\
+                                        basePosition=cargo_shift)
+
+        self._p.changeDynamics(self.cargo_id,-1, lateralFriction=self.k_friction)
+        self._p.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
+        self._p.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
+        
+        self.plane_id =self._p.loadURDF(self._urdfRoot + "/plane.urdf")
 if __name__ == "__main__":
 
-    env = CubeRacecarEnv() 
+    env = DuckRacecarEnv() 
     #env = gym.make("RacecarZedBulletEnv-v0")
 
 
     obs = env.reset()
     
 
-    for step in range(10):
+    for step in range(30):
 
         env.step(np.array([1.0, -1.0]))
 
-    obs = env.reset()
-
-    for step in range(100):
-
-        env.step(np.array([1.0, np.random.randn()]))
