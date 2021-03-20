@@ -47,7 +47,7 @@ RENDER_WIDTH = 960
 duckStartPos = [0,0,0.25]
 duckStartOrn = [0.5,0.5,0.5,0.5]
 
-class MinitaurDuckBulletEnv(gym.Env):
+class DuckMinitaurEnv(gym.Env):
   """The gym environment for the minitaur.
   It simulates the locomotion of a minitaur, a quadruped robot. The state space
   include the angles, velocities and torques for all the motors and the action
@@ -413,7 +413,7 @@ class MinitaurDuckBulletEnv(gym.Env):
     step = _step
 
 
-class MinitaurCubeBulletEnv(MinitaurDuckBulletEnv):
+class CubeMinitaurEnv(DuckMinitaurEnv):
 
     metadata = {
       "render.modes": ["human", "rgb_array"],
@@ -422,7 +422,7 @@ class MinitaurCubeBulletEnv(MinitaurDuckBulletEnv):
 
     def __init__(self, render=False):
         self.k_friction = 0.5
-        super(MinitaurCubeBulletEnv, self).__init__(render=render)
+        super(CubeMinitaurEnv, self).__init__(render=render)
 
 
     def make_cargo(self):
@@ -454,7 +454,7 @@ class MinitaurCubeBulletEnv(MinitaurDuckBulletEnv):
         pybullet.changeDynamics(self.cargo_id,-1, angularDamping=0.1)
         pybullet.changeDynamics(self.cargo_id,-1, linearDamping=0.1)
 
-class MinitaurSphereBulletEnv(MinitaurDuckBulletEnv):
+class SphereMinitaurEnv(DuckMinitaurEnv):
 
     metadata = {
       "render.modes": ["human", "rgb_array"],
@@ -463,7 +463,7 @@ class MinitaurSphereBulletEnv(MinitaurDuckBulletEnv):
 
     def __init__(self, render=False):
         self.k_friction = 0.5
-        super(MinitaurSphereBulletEnv, self).__init__(render=render)
+        super(SphereMinitaurEnv, self).__init__(render=render)
 
 
 
@@ -498,7 +498,7 @@ class MinitaurSphereBulletEnv(MinitaurDuckBulletEnv):
 if __name__ == "__main__":
 
 
-    env = MinitaurCubeBulletEnv(render=True)
+    env = CubeMinitaurEnv(render=True)
 
     obs = env.reset()
 
