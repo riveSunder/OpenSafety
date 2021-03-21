@@ -22,3 +22,6 @@ register(id="CubeRacecarEnv-v0", \
         entry_point="open_safety.envs.racecar_env:CubeRacecarEnv")
 register(id="SphereRacecarEnv-v0", \
         entry_point="open_safety.envs.racecar_env:SphereRacecarEnv")
+
+register(id="TowerKukaCamEnv-v0", \
+        entry_point="open_safety.envs.kuka_arm_env:TowerKukaCamEnv")
