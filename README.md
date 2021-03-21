@@ -1,6 +1,6 @@
 # Open Safety Gym
 <div align="center">
-<img src="assets/balance_bot_init.png">
+<img src="assets/minitaur_falling.png" width=75%>
 </div>
 
 # Project Mission
@@ -58,15 +58,14 @@ The current tasks can be categorized as balance tasks (1), cargo-carrying tasks 
 
 The balance task is rewarding based on forward movement speed of a two-wheeled balance bot, and constrained by the body of the robot falling below a threshold height, incurring a cost. Cargo-carrying tasks are similarly reward by forward movement, but incur a cost when cargo (either a duck, sphere, or cube) fall below a threshold height. A failure sequence with the cargo task and balance bot might look like the following screenshots: 
 
-<div align"center">
-<img src="assets/balance_bot_init.png" width=50%>
+<div align="center">
 <img src="assets/balance_bot_falling.png" width=50%>
 <img src="assets/balance_bot_fallen.png" width=50%>
 </div>
 
 The cargo-carrying + target-seeking task is based on the pybullet racecar (MIT racecar) task, and returns a wide thin image as an observation. Reward is based on reaching the large red ball, and cost is again based on keeping a cargo above a threshold height.  
 
-<div align"center">
+<div align="center">
 <img src="assets/racecar_cube_initial.png" width=50%>
 <img src="assets/racecar_falling.png" width=50%>
 <img src="assets/racecar_fallen.png" width=50%>
@@ -74,13 +73,13 @@ The cargo-carrying + target-seeking task is based on the pybullet racecar (MIT r
 
 The final category of task is a modified version of the Kuka robotic arm grasping task from PyBullet. The twist is a block tower instantiated in the grasping bin. Knocking over the tower incurs a cost when the top block falls below the threshold height.  
 
-<div align"center">
+<div align="center">
 <img src="assets/kuka_tower_standing.png" width=50%>
 <img src="assets/kuka_tower_falling.png" width=50%>
 </div>
 
 
-You may also be interested in installing the (WIP) [SafeAgents repository](https://github.com/riveSunder/SafeAgents) in the same virtual environment, where I am working on evolving agents that respect safety constraints imposed by OpenSafetyGym.
+There is also a (WIP) [SafeAgents repository](https://github.com/riveSunder/SafeAgents) in the same virtual environment, where I am working on evolving agents that respect safety constraints imposed by OpenSafetyGym.
 
 ```
 cd ../
