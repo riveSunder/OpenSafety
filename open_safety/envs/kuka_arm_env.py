@@ -26,7 +26,7 @@ class TowerKukaCamEnv(KukaCamGymEnv):
             urdf_root=pybullet_data.getDataPath(),\
             action_repeat=1,\
             enable_self_collision=True,\
-            renders=True,\
+            renders=False,\
             is_discrete=False):
 
         self.block_height = 3
