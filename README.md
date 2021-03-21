@@ -78,6 +78,7 @@ The final category of task is a modified version of the Kuka robotic arm graspin
 <img src="assets/kuka_tower_falling.png" width=50%>
 </div>
 
+## SafeAgents training (examples from older task versions)
 
 There is also a (WIP) [SafeAgents repository](https://github.com/riveSunder/SafeAgents) in the same virtual environment, where I am working on evolving agents that respect safety constraints imposed by OpenSafetyGym.
 
